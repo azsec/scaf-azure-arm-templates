@@ -143,6 +143,17 @@
             "metadata": {
                 "description": "Specify whether you want to enable Standard tier for Container Registry resource type"
             }
+        },
+        "keyvaultTier": {
+            "type": "string",
+            "defaultValue": "Standard",
+            "allowedValues": [
+                "Standard",
+                "Free"
+            ],
+            "metadata": {
+                "description": "Specify whether you want to enable Standard tier for Key Vault resource type"
+            }
         }
     },
     "resources": [
@@ -246,6 +257,17 @@
             ],
             "properties": {
                 "pricingTier": "[parameters('containerRegistryTier')]"
+            }
+        },
+        {
+            "type": "Microsoft.Security/pricings",
+            "apiVersion": "2018-06-01",
+            "name": "KeyVaults",
+            "dependsOn": [
+                "[concat('Microsoft.Security/pricings/ContainerRegistry')]"
+            ],
+            "properties": {
+                "pricingTier": "[parameters('keyvaultTier')]"
             }
         }
     ],

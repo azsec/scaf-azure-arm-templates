@@ -43,6 +43,9 @@
         },
         "containerRegistryTier": {
             "value": "Standard"
+        },
+        "keyvaultTier": {
+            "value": "Standard"
         }
     }
 }
