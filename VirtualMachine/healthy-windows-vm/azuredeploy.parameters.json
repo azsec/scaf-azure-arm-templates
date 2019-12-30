@@ -1,0 +1,45 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmName": {
+            "value": "az01"
+        },
+        "adminUsername": {
+            "value": "YOUR_ADMIN_USERNAME"
+        },
+        "adminPassword": {
+            "value": "YOUR_PASSWORD"
+        },
+        "vnetAddressPrefix": {
+            "value": "10.1.0.0/16"
+        },
+        "bastionSubnetPrefix": {
+            "value": "10.1.1.0/27"
+        },
+        "vmSubnetPrefix": {
+            "value": "10.1.0.0/24"
+        },
+        "scriptSasUri": {
+            "value": "YOUR_BLOB_SAS_URL_OF_VSCODE_INSTALL_SCRIPT"
+        },
+        "logAnalyticsWorkspaceId": {
+            "value": "YOUR_LOG_ANALYTICS_WORKSPACE_ID"
+        },
+        "logAnalyticsWorkspaceKey": {
+            "value": "YOUR_LOG_ANALYTICS_WORKSPACE_KEY"
+        },
+        "keyVaultName": {
+            "value": "YOUR_KEY_VAULT_NAME"
+        },
+        "keyVaultRgName": {
+            "value": "YOUR_KEY_VAULT_RESOURCE_GROUP_NAME"
+        },
+        "keyName": {
+            "value": "YOUR_KEY_VAULT_KEY_NAME"
+        },
+        "keyVersion": {
+            "value": "YOUR_KEY_VERSION"
+        }
+    }
+}

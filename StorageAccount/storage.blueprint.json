@@ -1,0 +1,290 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageAccountPrefix": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 8
+        },
+        "resourceTags": {
+            "type": "object",
+            "defaultValue": {
+                "Environment": "Dev",
+                "Project": "AzSec",
+                "CostCenter": "IT"
+            }
+        },
+        "storageAccountSku": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Standard_ZRS",
+                "Premium_ZRS",
+                "Standard_GZRS",
+                "Standard_RAGZRS"
+            ],
+            "metadata": {
+                "description": "Storage Account SKU. For Data redundancy and replication support, read here https://docs.microsoft.com/en-us/azure/storage/common/storage-redundancy"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for storage account"
+            }
+        },
+        "storageAccountType": {
+            "type": "string",
+            "defaultValue": "StorageV2",
+            "metadata": {
+                "description": "Storage account type. V2 is always recommended"
+            }
+        },
+        "advancedThreatProtectionEnabled": {
+            "type": "bool",
+            "defaultValue": true,
+            "allowedValues": [
+                true,
+                false
+            ],
+            "metadata": {
+                "description": "Enable or disable Advanced Threat Protection."
+            }
+        },
+        "centralLogWorkspaceId": {
+            "type": "string",
+            "defaultValue": "/subscriptions/67d6179d-a99d-4ccd-8c56-4d3ff2e13349/resourceGroups/security-services-rg/providers/Microsoft.OperationalInsights/workspaces/ts-shared-workspace",
+            "metadata": {
+                "description": "The Id of central Log Analytics workspace where collected storage metrics are stored"
+            }
+        },
+        "encryption": {
+            "type": "string",
+            "defaultValue": "Microsoft.Storage",
+            "metadata": {
+                "description": "Encryption provider. By default storage is encrypted by Microsoft encryption service. Unless KeyVault is provided."
+            }
+        },
+        "subnetServiceEndpoint": {
+            "type": "string",
+            "defaultValue": "/subscriptions/67d6179d-a99d-4ccd-8c56-4d3ff2e13349/resourceGroups/azsec-corporate-rg/providers/Microsoft.Network/virtualNetworks/azsec-corporate-vnet/subnets/azsec-services-subnet",
+            "metadata": {
+                "description": "Specify subnet for Service Endpoint. Ensure Service Endpoint is pre-enabled"
+            }
+        },
+        "anonymousAlertRuleName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Azure Monitor rule to monitor anonymous access to Blob service"
+            }
+        },
+        "anonymousAlertRuleDescription": {
+            "type": "string",
+            "defaultValue": "An alert rule to monitor anonymous access to blob",
+            "metadata": {
+                "description": "Description of the Azure Monitor rule to monitor anonymous access to Blob service"
+            }
+        },
+        "anonymousAlertSeverity": {
+            "type": "int",
+            "defaultValue": 4,
+            "allowedValues": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "metadata": {
+                "description": "Specify severity of anonymous alert rule"
+            }
+        },
+        "anonymousAlertRuleEnabled": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Enable the anonymous alert rule"
+            }
+        },
+        "anonymousAlertRuleCriterion": {
+            "type": "object",
+            "defaultValue": {
+                "name": "Criterion of anonymous rule",
+                "metricName": "Transactions",
+                "dimensions": [
+                    {
+                        "name": "ResponseType",
+                        "operator": "Include",
+                        "values": [
+                            "Success"
+                        ]
+                    },
+                    {
+                        "name": "ApiName",
+                        "operator": "Include",
+                        "values": [
+                            "GetBlob",
+                            "ListBlob",
+                            "PutBlob",
+                            "DeleteBlob"
+                        ]
+                    },
+                    {
+                        "name": "Authentication",
+                        "operator": "Include",
+                        "values": [
+                            "Anonymous"
+                        ]
+                    }
+                ],
+                "operator": "GreaterThan",
+                "alertSensitivity": "Medium",
+                "threshold": "5",
+                "timeAggregation": "Total"
+            },
+            "metadata": {
+                "description": "Criterion of the anonymous alert rule that is defined in parameter file"
+            }
+        },
+        "alertActionGroupId": {
+            "type": "string",
+            "defaultValue": "/subscriptions/67d6179d-a99d-4ccd-8c56-4d3ff2e13349/resourceGroups/cc-resource-group/providers/microsoft.insights/actionGroups/AzOps",
+            "metadata": {
+                "description": "Id of the action group for alert notification"
+            }
+        },
+        "alertWindowsSize": {
+            "type": "string",
+            "defaultValue": "PT5M",
+            "allowedValues": [
+                "PT1M",
+                "PT5M",
+                "PT15M",
+                "PT30M",
+                "PT1H",
+                "PT6H",
+                "PT12H",
+                "PT24H"
+            ],
+            "metadata": {
+                "description": "Period of time to monitor alert activity based on threshold"
+            }
+        },
+        "alertEvaluationFrequency": {
+            "type": "string",
+            "defaultValue": "PT1M",
+            "allowedValues": [
+                "PT1M",
+                "PT5M",
+                "PT15M",
+                "PT30M",
+                "PT1H"
+            ],
+            "metadata": {
+                "description": "Specifiy how option the alert is evaluated"
+            }
+        }
+    },
+    "variables": {
+        "storageAccountName": "[concat(parameters('storageAccountPrefix'), uniqueString(resourceGroup().id))]",
+        "criteria": "[array(parameters('anonymousAlertRuleCriterion'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "location": "[parameters('location')]",
+            "apiVersion": "2019-04-01",
+            "tags": "[parameters('resourceTags')]",
+            "kind": "[parameters('storageAccountType')]",
+            "sku": {
+                "name": "[parameters('storageAccountSku')]"
+            },
+            "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "keySource": "[parameters('encryption')]",
+                    "services": {
+                        "blob": {
+                            "enabled": true
+                        },
+                        "file": {
+                            "enabled": true
+                        }
+                    }
+                },
+                "networkAcls": {
+                    "defaultAction": "Deny",
+                    "virtualNetworkRules": [
+                        {
+                            "id": "[parameters('subnetServiceEndpoint')]",
+                            "action": "Allow"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "condition": "[parameters('advancedThreatProtectionEnabled')]",
+                    "type": "providers/advancedThreatProtectionSettings",
+                    "name": "Microsoft.Security/current",
+                    "apiVersion": "2017-08-01-preview",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+                    ],
+                    "properties": {
+                        "isEnabled": true
+                    }
+                },
+                {
+                    "type": "providers/diagnosticSettings",
+                    "name": "[concat('Microsoft.Insights/', variables('storageAccountName'))]",
+                    "apiVersion": "2017-05-01-preview",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+                    ],
+                    "properties": {
+                        "name": "[variables('storageAccountName')]",
+                        "workspaceId": "[parameters('centralLogWorkspaceId')]",
+                        "metrics": [
+                            {
+                                "category": "AllMetrics",
+                                "enabled": true
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Insights/metricAlerts",
+            "name": "[parameters('anonymousAlertRuleName')]",
+            "apiVersion": "2018-03-01",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "description": "[parameters('anonymousAlertRuleDescription')]",
+                "severity": "[parameters('anonymousAlertSeverity')]",
+                "enabled": "[parameters('anonymousAlertRuleEnabled')]",
+                "scopes": "[array(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')))]",
+                "evaluationFrequency": "[parameters('alertEvaluationFrequency')]",
+                "windowSize": "[parameters('alertWindowsSize')]",
+                "criteria": {
+                    "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+                    "allOf": "[variables('criteria')]"
+                },
+                "actions": [
+                    {
+                        "actionGroupId": "[parameters('alertActionGroupId')]"
+                    }
+                ]
+            }
+        }
+    ]
+}
