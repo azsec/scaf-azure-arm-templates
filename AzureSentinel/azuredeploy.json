@@ -42,8 +42,15 @@
         },
         "location": {
             "type": "string",
+            "allowedValues": [
+                "westus",
+                "westus2",
+                "eastus",
+                "eastus2",
+                "centralus"
+            ],
             "metadata": {
-                "description": "Location of the existing Log Analytics workspace"
+                "description": "Location of the Log Analytics workspace. Find available regions and add more to the list"
             }
         }
     },
