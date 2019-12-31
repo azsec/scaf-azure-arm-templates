@@ -1,0 +1,89 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspaceName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Log Analytics workspace your Azure Sentinel connects to"
+            }
+        },
+        "sharedWorkspace": {
+            "type": "string",
+            "defaultValue": "existing",
+            "allowedValues": [
+                "new",
+                "existing"
+            ],
+            "metadata": {
+                "description": "Specify whether you want to create a new Log Analytics workspace for your Azure Sentinel"
+            }
+        },
+        "workspaceSku": {
+            "type": "string",
+            "defaultValue": "PerNode",
+            "allowedValues": [
+                "Standalone",
+                "Premium",
+                "PerNode",
+                "PerGB2018"
+            ],
+            "metadata": {
+                "description": "SKU of the Log Analytics workspace"
+            }
+        },
+        "dataRetention": {
+            "type": "int",
+            "minValue": 30,
+            "maxValue": 365,
+            "metadata": {
+                "description": "Data retention in Log Analytics workspace"
+            }
+        },
+        "location": {
+            "type": "string",
+            "metadata": {
+                "description": "Location of the existing Log Analytics workspace"
+            }
+        }
+    },
+    "variables": {
+        "azureSentinelSolutionName": "[concat('SecurityInsights', '(', parameters('workspaceName'), ')')]",
+        "product": "OMSGallery/SecurityInsights",
+        "publisher": "Microsoft"
+    },
+    "resources": [
+        {
+            "condition": "[equals(parameters('sharedWorkspace'), 'new')]",
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "apiVersion": "2015-11-01-preview",
+            "name": "[parameters('workspaceName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "sku": {
+                    "name": "[parameters('workspaceSku')]"
+                },
+                "retentionInDays": "[parameters('dataRetention')]"
+            }
+        },
+        {
+            "condition": "[equals(parameters('sharedWorkspace'), 'existing')]",
+            "type": "Microsoft.OperationsManagement/solutions",
+            "apiVersion": "2015-11-01-preview",
+            "name": "[variables('azureSentinelSolutionName')]",
+            "location": "[parameters('location')]",
+            "plan": {
+                "name": "[variables('azureSentinelSolutionName')]",
+                "promotionCode": "",
+                "product": "[variables('product')]",
+                "publisher": "[variables('publisher')]"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]"
+            ],
+            "properties": {
+                "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]"
+            }
+        }
+    ]
+}
