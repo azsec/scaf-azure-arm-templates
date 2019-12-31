@@ -74,7 +74,6 @@
             }
         },
         {
-            "condition": "[equals(parameters('sharedWorkspace'), 'existing')]",
             "type": "Microsoft.OperationsManagement/solutions",
             "apiVersion": "2015-11-01-preview",
             "name": "[variables('azureSentinelSolutionName')]",
