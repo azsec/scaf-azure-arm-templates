@@ -269,6 +269,15 @@
             "properties": {
                 "pricingTier": "[parameters('keyvaultTier')]"
             }
+        },
+        {
+            "type": "Microsoft.Security/settings",
+            "apiVersion": "2019-01-01",
+            "name": "WDATP",
+            "kind": "DataExportSettings",
+            "properties": {
+                "enabled": true
+            }
         }
     ],
     "outputs": {
