@@ -17,7 +17,7 @@
         "kind" = "DataExportSettings"
           "type" =  "Microsoft.Security/settings"
           "properties" = @{
-            "enabled" = 'false'
+            "enabled" = 'true'
           }
     }
 
