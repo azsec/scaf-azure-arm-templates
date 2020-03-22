@@ -80,6 +80,9 @@
             "apiVersion": "2018-10-01",
             "name": "[parameters('vmName')]",
             "location": "[parameters('location')]",
+            "identity": {
+                "type": "SystemAssigned"
+            },
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
             ],
