@@ -1,0 +1,18 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmName": {
+            "value": "azsec-linux"
+        },
+        "adminUsername": {
+            "value": "azsec"
+        },
+        "adminPassword": {
+            "value": "YOUR_PASSWORD"
+        },
+        "subnetId": {
+            "value": "YOUR_SUBNET"
+        }
+    }
+}
