@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
+    "contentVersion": "1.0.0.1",
     "parameters": {
         "workspaceName": {
             "type": "string",
@@ -154,6 +154,26 @@
             "metadata": {
                 "description": "Specify whether you want to enable Standard tier for Key Vault resource type"
             }
+        },
+        "integrationName": {
+            "type": "string",
+            "allowedValues": [
+                "MCAS",
+                "MDATP"
+            ],
+            "metadata": {
+                "description": "Select integration name to enable. Only MCAS or MDATP is supported."
+            }
+        },
+        "integrationEnabled": {
+            "type": "bool",
+            "allowedValues": [
+                true,
+                false
+            ],
+            "metadata": {
+                "description": "Specify whether you want to enable or not."
+            }
         }
     },
     "resources": [
@@ -268,6 +288,15 @@
             ],
             "properties": {
                 "pricingTier": "[parameters('keyvaultTier')]"
+            }
+        },
+        {
+            "type": "Microsoft.Security/settings",
+            "apiVersion": "2019-01-01",
+            "name": "[parameters('integrationName')]",
+            "kind": "DataExportSettings",
+            "properties": {
+                "enabled": "[parameters('integrationEnabled')]"
             }
         }
     ],
