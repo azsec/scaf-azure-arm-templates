@@ -1,0 +1,24 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "baseName": {
+            "value": "azec"
+        },
+        "storageAccountType": {
+            "value": "Standard_LRS"
+        },
+        "trustedSubnets": {
+            "value": [
+                "/subscriptions/67d6179d-a99d-4ccd-8c56-4d3ff2e13349/resourceGroups/azsec-new-rg/providers/Microsoft.Network/virtualNetworks/azec-vnet/subnets/azec-vm1-vm-subnet",
+                "/subscriptions/67d6179d-a99d-4ccd-8c56-4d3ff2e13349/resourceGroups/azsec-corporate-rg/providers/Microsoft.Network/virtualNetworks/azsec-corporate-vnet/subnets/azsec-services-subnet"
+            ]
+        },
+        "trustedIpRanges": {
+            "value": [
+                "77.78.79.80",
+                "77.80.81.82"
+            ]
+        }
+    }
+}
