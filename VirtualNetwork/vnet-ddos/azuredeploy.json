@@ -1,0 +1,76 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": {
+      "type": "string",
+      "defaultValue": "azsec",
+      "metadata": {
+        "description": "Basename of resource deployment"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location of the virtual network"
+      }
+    },
+    "enableDdosProtection": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Indicate whether you want to enable DDos Protection"
+      }
+    }
+  },
+  "variables": {
+    "vnetName": "[if(parameters('enableDdosProtection'), concat(parameters('baseName'),'-vnet-with-ddos'), concat(parameters('baseName'), '-vnet-no-ddos'))]",
+    "subnetName": "[concat(variables('vnetName'), 'subnet')]",
+    "vnetAddressPrefix": "172.17.0.0/16",
+    "subnetAddressPrefix": "172.17.0.0/24",
+    "ddosProtectionPlanName": "[concat(parameters('baseName'),'ddos-plan')]",
+    "ddosProtection": {
+        "id": "[resourceId('Microsoft.Network/ddosProtectionPlans', variables('ddosProtectionPlanName'))]"
+    }
+  },
+  "resources": [
+    {
+      "condition": "[parameters('enableDdosProtection')]",
+      "type": "Microsoft.Network/ddosProtectionPlans",
+      "apiVersion": "2020-11-01",
+      "name": "[variables('ddosProtectionPlanName')]",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-11-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/ddosProtectionPlans', variables('ddosProtectionPlanName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": ["[variables('vnetAddressPrefix')]"]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefix')]"
+            }
+          }
+        ],
+        "enableDdosProtection": "[parameters('enableDdosProtection')]",
+        "ddosProtectionPlan": "[if(parameters('enableDdosProtection'), variables('ddosProtection'),json('null'))]"
+      }
+    }
+  ],
+  "outputs": {
+      "resourceId": {
+          "type": "string",
+          "value": "[resourceId('Microsoft.Network/virtualNetworks',variables('vnetName'))]"
+      }
+  }
+}
