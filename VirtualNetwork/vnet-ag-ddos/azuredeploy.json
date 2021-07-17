@@ -1,0 +1,192 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": {
+      "type": "string",
+      "defaultValue": "azsec",
+      "metadata": {
+        "description": "Basename of resource deployment"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location of the virtual network"
+      }
+    },
+    "enableDdosProtection": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Indicate whether you want to enable DDos Protection"
+      }
+    }
+  },
+  "variables": {
+    "vnetName": "[if(parameters('enableDdosProtection'), concat(parameters('baseName'),'-vnet-ag-with-ddos'), concat(parameters('baseName'), '-vnet-ag-no-ddos'))]",
+    "subnetName": "[if(parameters('enableDdosProtection'), concat(parameters('baseName'),'-subnet-with-ddos'), concat(parameters('baseName'), '-subnet-ag-no-ddos'))]",
+    "vnetAddressPrefix": "10.0.0.0/16",
+    "subnetAddressPrefix": "10.0.0.0/24",
+    "ddosProtectionPlanName": "[concat(parameters('baseName'),'-ag-ddos-plan')]",
+    "ddosProtection": {
+      "id": "[resourceId('Microsoft.Network/ddosProtectionPlans', variables('ddosProtectionPlanName'))]"
+    },
+    "applicationGatewayName": "[if(parameters('enableDdosProtection'), concat(parameters('baseName'),'-ag-with-ddos'), concat(parameters('baseName'), '-ag-no-ddos'))]",
+    "applicationGatewaySize": "Standard_Small",
+    "applicationGatewayInstanceCount": 2,
+    "applicationGatewayFrontEndPort": 80,
+    "applicationGatewayBackendPort": 80,
+    "applicationGatewayBackendIp": [
+      {
+        "IpAddress": "10.0.0.4"
+      },
+      {
+        "IpAddress": "10.0.0.5"
+      }
+    ],
+    "cookieBasedAffinity": "Disabled",
+    "frontendIPConfigurationsName": "ApplicationGatewayFrontendIP",
+    "frontendPortsName": "ApplicationGatewayFrontendPort",
+    "httpListenersName": "ApplicationGatewayHttpListener",
+    "backendAddressPoolsName": "ApplicationGatewayBackendPool",
+    "applicationGatewayBackendHttpSettingsName": "ApplicationGatewayBackendHttpSettings"
+  },
+  "resources": [
+    {
+      "condition": "[parameters('enableDdosProtection')]",
+      "type": "Microsoft.Network/ddosProtectionPlans",
+      "apiVersion": "2020-11-01",
+      "name": "[variables('ddosProtectionPlanName')]",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-11-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/ddosProtectionPlans', variables('ddosProtectionPlanName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": ["[variables('vnetAddressPrefix')]"]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefix')]"
+            }
+          }
+        ],
+        "enableDdosProtection": "[parameters('enableDdosProtection')]",
+        "ddosProtectionPlan": "[if(parameters('enableDdosProtection'), variables('ddosProtection'),json('null'))]"
+      }
+    },
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2020-11-01",
+      "name": "[variables('applicationGatewayName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "sku": {
+          "name": "[variables('applicationGatewaySize')]",
+          "tier": "Standard",
+          "capacity": "[variables('applicationGatewayInstanceCount')]"
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "applicationGatewayIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('subnetName'))]"
+              }
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "[variables('frontendIPConfigurationsName')]",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('subnetName'))]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "[variables('frontendPortsName')]",
+            "properties": {
+              "port": "[variables('applicationGatewayFrontEndPort')]"
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "[variables('backendAddressPoolsName')]",
+            "properties": {
+              "backendAddresses": "[variables('applicationGatewayBackendIp')]"
+            }
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "[variables('applicationGatewayBackendHttpSettingsName')]",
+            "properties": {
+              "port": "[variables('applicationGatewayBackendPort')]",
+              "protocol": "Http",
+              "cookieBasedAffinity": "[variables('cookieBasedAffinity')]"
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "[variables('httpListenersName')]",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations',variables('applicationGatewayName'),variables('frontendIPConfigurationsName'))]"
+              },
+              "frontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',variables('applicationGatewayName'),variables('frontendPortsName'))]"
+              },
+              "protocol": "Http"
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "name": "routingRule1",
+            "properties": {
+              "ruleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners',variables('applicationGatewayName'),variables('httpListenersName'))]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('applicationGatewayName'), variables('backendAddressPoolsName'))]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', variables('applicationGatewayName'), variables('applicationGatewayBackendHttpSettingsName'))]"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "vNetResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks',variables('vnetName'))]"
+    },
+    "applicationGatewayResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/applicationGateways',variables('applicationGatewayName'))]"
+    }
+  }
+}

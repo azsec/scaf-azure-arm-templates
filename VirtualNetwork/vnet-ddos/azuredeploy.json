@@ -26,7 +26,7 @@
   },
   "variables": {
     "vnetName": "[if(parameters('enableDdosProtection'), concat(parameters('baseName'),'-vnet-with-ddos'), concat(parameters('baseName'), '-vnet-no-ddos'))]",
-    "subnetName": "[concat(variables('vnetName'), 'subnet')]",
+    "subnetName": "[if(parameters('enableDdosProtection'), concat(parameters('baseName'),'-subnet-with-ddos'), concat(parameters('baseName'), '-subnet-no-ddos'))]",
     "vnetAddressPrefix": "172.17.0.0/16",
     "subnetAddressPrefix": "172.17.0.0/24",
     "ddosProtectionPlanName": "[concat(parameters('baseName'),'ddos-plan')]",
