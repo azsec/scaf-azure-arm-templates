@@ -1,0 +1,137 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspaceName": {
+      "type": "string",
+      "defaultValue": "azsec-shared-workspace",
+      "metadata": {
+        "description": "The name of the Log Analytics Workspace Azure Sentinel is connected to."
+      }
+    },
+    "analyticsRuleId": {
+      "type": "string",
+      "defaultValue": "[newGuid()]",
+      "metadata": {
+        "description": "The name (GUID) of the Azure Sentinel custom analytics rule."
+      }
+    },
+    "analyticsRuleDisplayName": {
+      "type": "string",
+      "metadata": {
+        "description": "The display name of the Azure Sentinel custom analytics rule."
+      }
+    },
+    "analyticsRuleDescription": {
+      "type": "string",
+      "metadata": {
+        "description": "The description of the Azure Sentinel custom analytics rule."
+      }
+    },
+    "analyticsRuleSeverity": {
+      "type": "string",
+      "allowedValues": ["Informational", "Low", "Medium", "High"],
+      "metadata": {
+        "description": "The severity of the Azure Sentinel custom analytics rule."
+      }
+    },
+    "analyticsRuleQuery": {
+      "type": "string",
+      "metadata": {
+        "description": "The query of the Azure Sentinel custom analytics rule."
+      }
+    },
+    "alertDisplayNameFormat": {
+      "type": "string",
+      "metadata": {
+        "description": "The display name format of the Azure Sentinel custom analytics rule. More information https://azsec.azurewebsites.net/2021/11/01/azure-sentinel-custom-alert-named-based-on-detected-resource/"
+      }
+    },
+    "analyticsRuleTactics": {
+      "type": "array",
+      "allowedValues": [
+        "InitialAccess",
+        "PreAttack",
+        "Execution",
+        "Persistence",
+        "PrivilegeEscalation",
+        "DefenseEvasion",
+        "CredentialAccess",
+        "Discovery",
+        "LateralMovement",
+        "Collection",
+        "Exfiltration",
+        "CommandAndControl",
+        "Impact"
+      ],
+      "metadata": {
+        "description": "The tactic of the Azure Sentinel custom analytics rule. "
+      }
+    }
+  },
+  "variables": {
+    "alertRuleName": "[concat(parameters('workspaceName'), '/Microsoft.SecurityInsights/', parameters('analyticsRuleId'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "name": "[variables('alertRuleName')]",
+      "kind": "Scheduled",
+      "apiVersion": "2021-09-01-preview",
+      "properties": {
+        "displayName": "[parameters('analyticsRuleDisplayName')]",
+        "description": "[parameters('analyticsRuleDescription')]",
+        "severity": "[parameters('analyticsRuleSeverity')]",
+        "enabled": true,
+        "query": "[parameters('analyticsRuleQuery')]",
+        "queryFrequency": "PT5H",
+        "queryPeriod": "PT5H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT5H",
+        "suppressionEnabled": false,
+        "tactics": "[parameters('analyticsRuleTactics')]",
+        "alertRuleTemplateName": null,
+        "incidentConfiguration": {
+          "createIncident": true,
+          "groupingConfiguration": {
+            "enabled": false,
+            "reopenClosedIncident": false,
+            "lookbackDuration": "PT5H",
+            "matchingMethod": "AllEntities",
+            "groupByEntities": [],
+            "groupByAlertDetails": [],
+            "groupByCustomDetails": []
+          }
+        },
+        "eventGroupingSettings": {
+          "aggregationKind": "SingleAlert"
+        },
+        "alertDetailsOverride": {
+          "alertDisplayNameFormat": "[parameters('alertDisplayNameFormat')]",
+          "alertDescriptionFormat": "[parameters('alertDisplayNameFormat')]",
+          "alertTacticsColumnName": null,
+          "alertSeverityColumnName": null
+        },
+        "customDetails": {
+          "NsgName": "NsgName",
+          "NsgRule": "NsgRule",
+          "ResourceGroup": "ResourceGroup",
+          "Caller": "Caller",
+          "CallerIpAddress": "CallerIpAddress"
+        },
+        "entityMappings": [
+          {
+            "entityType": "AzureResource",
+            "fieldMappings": [
+              {
+                "identifier": "ResourceId",
+                "columnName": "_ResourceId"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

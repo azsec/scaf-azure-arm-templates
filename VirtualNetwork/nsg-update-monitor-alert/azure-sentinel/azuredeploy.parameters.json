@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspaceName": {
+      "value": "azsec-shared-workspace"
+    },
+    "analyticsRuleDisplayName": {
+      "value": "Monitor NSG Inbound Rule Updated to Allow All"
+    },
+    "analyticsRuleDescription": {
+      "value": "This alert rule is used to monitor and alert if someone updates NSG inbound rule to allow All (*)."
+    },
+    "analyticsRuleSeverity": {
+      "value": "Medium"
+    },
+    "analyticsRuleQuery": {
+      "value": "AzureActivity \r\n| where OperationNameValue =~ \"Microsoft.Network/networkSecurityGroups/securityRules/write\"\r\n| where ActivityStatusValue == \"Accept\"\r\n| extend SourceAddressPrefix_ = tostring(parse_json(tostring(parse_json(tostring(Properties_d.responseBody)).properties)).sourceAddressPrefix) \r\n| extend SourceAddressPrefixes_ = tostring(parse_json(tostring(parse_json(tostring(Properties_d.requestbody)).properties)).sourceAddressPrefixes)\r\n| extend Access = tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).responseBody)).properties)).access)\r\n| where SourceAddressPrefix_ == '*' or SourceAddressPrefixes_ == '' or SourceAddressPrefixes_ == '0.0.0.0/0' \r\n| where Access == \"Allow\"\r\n| extend NsgName = split(_ResourceId, '/')[8] \r\n| extend NsgRule = split(_ResourceId, '/')[10] \r\n| project TimeGenerated, \r\n          NsgName, \r\n          NsgRule, \r\n          ResourceGroup, \r\n          SourceAddressPrefix_, \r\n          SourceAddressPrefixes_,\r\n          Caller,\r\n          CallerIpAddress,\r\n          _ResourceId"
+    },
+    "alertDisplayNameFormat": {
+      "value": "A {{NsgName}} has inbound rule {{NsgRule}} updated to allow all"
+    },
+    "analyticsRuleTactics": {
+      "value": [
+        "InitialAccess"
+      ]
+    }
+  }
+}
