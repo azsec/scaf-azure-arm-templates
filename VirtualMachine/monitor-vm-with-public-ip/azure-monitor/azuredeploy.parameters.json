@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "alertName": {
+      "value": "vm-creation-or-update-with-public-ip-address"
+    },
+    "alertDescription": {
+      "value": "This alert is used to monitor and alert if someone created or updated a virtual machine with a public IP address associated with"
+    },
+    "query": {
+      "value": "// Find Network Interface Card (NIC) where a Public Ip address is associated with\nlet NicResourceIds = \nAzureActivity\n| where OperationNameValue =~ \"Microsoft.Network/networkInterfaces/write\"\n| extend publicIpResourceId = tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).requestbody)).properties)).ipConfigurations))[0].properties)).publicIpAddress)).id)\n| where publicIpResourceId != \"\"\n| project _ResourceId;\n// Find virtual machines that have Nic associated with\nAzureActivity\n| where CategoryValue  == \"Administrative\"\n| extend Action = tostring(parse_json(Authorization).action),\n        NicResourceId = tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).responseBody)).properties)).networkProfile)).networkInterfaces))[0].id)\n| where Action =~ \"Microsoft.Compute/virtualMachines/write\" and\n        ActivityStatusValue =~ 'Accepted' and\n        NicResourceId in~ (NicResourceIds)\n| project TimeGenerated,\n          VmName=Resource,\n          ResourceGroup, \n          SubscriptionId,\n          Caller,\n          CallerIpAddress, \n          ActivityStatusValue, \n          NicResourceId,\n          _ResourceId"
+    },
+    "evaluationFrequency": {
+      "value": 5
+    },
+    "timeWindow": {
+      "value": 15
+    },
+    "threshold": {
+      "value": 0
+    },
+    "operator": {
+      "value": "GreaterThan"
+    },
+    "throttling": {
+      "value": 0
+    },
+    "severity": {
+      "value": 0
+    },
+    "actionGroupResourceIds": {
+      "value": [
+        "/subscriptions/67d6179d-a99d-4ccd-8c56-4d3ff2e13349/resourceGroups/azsec-corporate-rg/providers/microsoft.insights/actionGroups/secops-ag"
+      ]
+    },
+    "logAnalyticsWorkspaceResourceId": {
+      "value": "/subscriptions/67d6179d-a99d-4ccd-8c56-4d3ff2e13349/resourcegroups/azsec-corporate-rg/providers/microsoft.operationalinsights/workspaces/azsec-shared-workspace"
+    },
+    "logAnalyticsWorkspaceLocation": {
+      "value": "eastus"
+    },
+    "isEnabled": {
+      "value": true
+    }
+  }
+}

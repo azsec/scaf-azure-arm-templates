@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspaceName": {
+      "value": "azsec-shared-workspace"
+    },
+    "analyticsRuleDisplayName": {
+      "value": "Monitor NSG Inbound Rule Updated to Allow All"
+    },
+    "analyticsRuleDescription": {
+      "value": "This alert rule is used to monitor and alert if someone updates NSG inbound rule to allow All (*)."
+    },
+    "analyticsRuleSeverity": {
+      "value": "Medium"
+    },
+    "analyticsRuleQuery": {
+      "value": "// Find Network Interface Card (NIC) where a Public Ip address is associated with\nlet NicResourceIds = \nAzureActivity\n| where OperationNameValue =~ \"Microsoft.Network/networkInterfaces/write\"\n| extend publicIpResourceId = tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).requestbody)).properties)).ipConfigurations))[0].properties)).publicIpAddress)).id)\n| where publicIpResourceId != \"\"\n| project _ResourceId;\n// Find virtual machines that have Nic associated with\nAzureActivity\n| where CategoryValue  == \"Administrative\"\n| extend Action = tostring(parse_json(Authorization).action),\n        NicResourceId = tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).responseBody)).properties)).networkProfile)).networkInterfaces))[0].id)\n| where Action =~ \"Microsoft.Compute/virtualMachines/write\" and\n        ActivityStatusValue =~ 'Accepted' and\n        NicResourceId in~ (NicResourceIds)\n| project TimeGenerated,\n          VmName=Resource,\n          ResourceGroup, \n          SubscriptionId,\n          Caller,\n          CallerIpAddress, \n          ActivityStatusValue, \n          NicResourceId,\n          _ResourceId"
+    },
+    "alertDisplayNameFormat": {
+      "value": "A {{VmName}} is created or updated with a Public IP address associated with"
+    },
+    "analyticsRuleTactics": {
+      "value": [
+        "Discovery",
+        "InitialAccess"
+      ]
+    }
+  }
+}
