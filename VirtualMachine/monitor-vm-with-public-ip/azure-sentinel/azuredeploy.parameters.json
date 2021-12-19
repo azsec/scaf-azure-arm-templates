@@ -6,10 +6,10 @@
       "value": "azsec-shared-workspace"
     },
     "analyticsRuleDisplayName": {
-      "value": "Monitor NSG Inbound Rule Updated to Allow All"
+      "value": "Monitor Virtual Machine Creation or Update with Public IP Address"
     },
     "analyticsRuleDescription": {
-      "value": "This alert rule is used to monitor and alert if someone updates NSG inbound rule to allow All (*)."
+      "value": "This alert is used to monitor and alert if someone created or updated a virtual machine with a public IP address associated with"
     },
     "analyticsRuleSeverity": {
       "value": "Medium"
