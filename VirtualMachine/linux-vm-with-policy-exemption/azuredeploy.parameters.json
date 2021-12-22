@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "value": "vm00001"
+    },
+    "location": {
+      "value": "westus"
+    },
+    "adminUsername": {
+      "value": "{your_username}"
+    },
+    "adminPassword": {
+      "value": "{your_password}"
+    },
+    "vmSize": {
+      "value": "Standard_A4_v2"
+    },
+    "subnetId": {
+      "value": "{your_subnet_id}"
+    },
+    "policyAssignmentId": {
+      "value": "/providers/microsoft.management/managementgroups/03987603-0fc0-4103-bd94-cdffbefb2226/providers/microsoft.authorization/policyassignments/978034c7254c4a6db139f365"
+    },
+    "expireOn": {
+        "value": "2021-12-23T00:00:00"
+    }
+  }
+}
