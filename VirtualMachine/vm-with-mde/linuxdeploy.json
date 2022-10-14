@@ -273,7 +273,7 @@
                     "provisionedBy": "Manual"
                 },
                 "protectedSettings": {
-                    "defenderForEndpointOnboardingScript": "[reference(subscriptionResourceId('Microsoft.Security/mdeOnboardings', 'Linux'), '2022-08-11-preview', 'full').properties.onboardingPackageLinux]"
+                    "defenderForEndpointOnboardingScript": "[reference(subscriptionResourceId('Microsoft.Security/mdeOnboardings', 'Linux'), '2021-10-01-preview', 'full').properties.onboardingPackageLinux]"
                 }
             }
         }
